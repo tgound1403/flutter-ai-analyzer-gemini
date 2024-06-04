@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_analyzer_app/core/common/style/padding_style.dart';
 import 'package:flutter_ai_analyzer_app/core/services/firebase/firestore.dart';
@@ -68,15 +70,22 @@ class _ChatViewState extends State<ChatView> {
   Future<void> askAI(String question) async {
     List<Content>? history = [];
     try {
+      setState(() {
+        _isLoading = true;
+      });
       if (_controller.text.isNotEmpty) {
         final message = MessageModel(message: _controller.text, isUser: true);
         _messages.add(message);
-        _isLoading = true;
       }
 
       for (final message in widget.model.messages!) {
         if (message.isUser ?? false) {
-          history.add(Content('user', [TextPart(message.message!)]));
+          if (message.mimeType == null) {
+            history.add(Content('user', [TextPart(message.message!)]));
+          } else {
+            final decoded = base64Decode(message.message!);
+            history.add(Content('user', [DataPart(message.mimeType!, decoded)]));
+          }
         } else {
           history.add(Content('model', [TextPart(message.message!)]));
         }

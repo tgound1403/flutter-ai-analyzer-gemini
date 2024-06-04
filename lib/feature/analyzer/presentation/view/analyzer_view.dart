@@ -10,13 +10,11 @@ import 'package:flutter_ai_analyzer_app/feature/chat/data/model/chat_model.dart'
 import 'package:flutter_ai_analyzer_app/feature/chat/data/model/message.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:gap/gap.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/router/route_path.dart';
 import '../../../../core/router/router.dart';
 import '../../../../core/services/firebase/firestore.dart';
-import '../../../../core/utils/logger.dart';
 import 'package:mime/mime.dart';
 
 class AnalyzerView extends StatefulWidget {
