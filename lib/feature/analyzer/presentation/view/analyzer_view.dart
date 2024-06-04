@@ -6,8 +6,11 @@ import 'package:flutter_ai_analyzer_app/core/common/style/border_radius_style.da
 import 'package:flutter_ai_analyzer_app/core/common/style/padding_style.dart';
 import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/data/model/chat_model.dart';
+import 'package:flutter_ai_analyzer_app/feature/chat/data/model/message.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../core/router/route_path.dart';
 import '../../../../core/router/router.dart';
@@ -33,7 +36,7 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   }
 
   Future<void> fetchData() async {
-    final chatRes = await Firestore.instance.readData('chats');
+    final chatRes = await Firestore.instance.readAllData('chats');
     for (var e in chatRes) {
       lsChat.add(ChatModel.fromJson(e));
     }
@@ -41,24 +44,26 @@ class _AnalyzerViewState extends State<AnalyzerView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('AI Analyzer'),
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('AI Analyzer'),
+          leading: Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              );
+            },
+          ),
         ),
+        drawer: Drawer(
+          child: _buildDrawerContent(),
+        ),
+        body: _buildBody(),
       ),
-      drawer: Drawer(
-        child: _buildDrawerContent(),
-      ),
-      body: _buildBody(),
     );
   }
 
@@ -67,26 +72,25 @@ class _AnalyzerViewState extends State<AnalyzerView> {
     return ListView(
       shrinkWrap: true,
       children: [
-        DrawerHeader(
-          decoration: const BoxDecoration(
-            color: Colors.blueGrey,
-          ),
+        Padding(
+          padding: AppPadding.styleLarge,
           child: Text(
-            'Drawer Header',
+            'Old stories',
             style: Theme.of(context).textTheme.headlineLarge,
           ),
         ),
+        const Gap(32),
         ListView.separated(
             shrinkWrap: true,
-            itemBuilder: (_, idx) => ListTile(
-                  title: Text(
-                    lsChat[idx].id,
-                    overflow: TextOverflow.ellipsis,
+            itemBuilder: (_, idx) => InkWell(
+              onTap: () async => await openChat(lsChat[idx].id ?? ''),
+              child: ListTile(
+                    title: MarkdownBody(
+                      data: lsChat[idx].title ?? '',
+                    ),
                   ),
-                ),
-            separatorBuilder: (_, idx) => const Divider(
-                  thickness: 1,
-                ),
+            ),
+            separatorBuilder: (_, idx) => const Divider(thickness: 1,),
             itemCount: lsChat.length)
       ],
     );
@@ -154,35 +158,41 @@ class _AnalyzerViewState extends State<AnalyzerView> {
       return const SizedBox.shrink();
     }
   }
+  //* endregion
 
-//* endregion
-
-//* region ACTION
+  //* region ACTION
   Future<void> browseFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
     if (result != null) {
       file = File(result.files.single.path!);
-      _controller.text = file!.path.toString();
+      final filePath = file!.path.toString();
+      _controller.text = file!.path.substring(filePath.lastIndexOf('/') + 1, filePath.length);
       setState(() {});
     } else {
       // User canceled the picker
     }
   }
 
-  Future<XFile?> browseImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-    );
-    if (pickedFile == null) return null;
-    return pickedFile;
-    return null;
-  }
-
   Future<void> goToChat() async {
     // await Routes.router.navigateTo(context, RoutePath.chatView);
-    await GeminiAI.instance.generateFromSingleFile(file!, '');
+    final response = await GeminiAI.instance.generateFromSingleFile(file!, '');
+    if (response?.isNotEmpty ?? false) {
+      final title = await GeminiAI.instance.generateFromText(
+          'Give me a short title with at most 10 words from this paragraph: $response, just give me plain text title back, not markdown format'
+      );
+      final userMessage  = MessageModel(message: _controller.text, isUser: true);
+      final systemMessage = MessageModel(message: response ?? '', isUser: false);
+      final data = ChatModel(id: const Uuid().v4(), title: title ?? '', messages: [userMessage, systemMessage] );
+      Firestore.instance.addData(data.toJson(), 'chats');
+      Routes.router.navigateTo(context, RoutePath.chatView, routeSettings: RouteSettings(arguments: data));
+    }
   }
-//*  endregion
+
+  Future<void> openChat(String id) async {
+    final res = await Firestore.instance.readSpecificData('chats', id);
+      final model = ChatModel.fromJson(res);
+      await Routes.router.navigateTo(context, RoutePath.chatView, routeSettings: RouteSettings(arguments: model));
+  }
+  //*  endregion
 }

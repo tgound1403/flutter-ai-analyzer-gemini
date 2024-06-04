@@ -15,11 +15,11 @@ class Firestore {
         talker.info('DocumentSnapshot added with ID: ${doc.id}'));
   }
 
-  Future<List<Map<String,dynamic>>> readData(String collection) async {
-    var result = <Map<String,dynamic>>[];
+  Future<List<Map<String, dynamic>>> readAllData(String collection) async {
+    var result = <Map<String, dynamic>>[];
     await db.collection(collection).get().then((event) {
       for (var doc in event.docs) {
-        final docId = doc.id;
+        // final docId = doc.id;
         final docData = doc.data();
         result.add(docData);
       }
@@ -27,5 +27,19 @@ class Firestore {
     return result;
   }
 
-
+  Future<Map<String, dynamic>> readSpecificData(
+      String collection, String id) async {
+    var result = <String, dynamic>{};
+    try {
+      await db.collection(collection).where('id', isEqualTo: id).get().then((event) {
+        for (var doc in event.docs) {
+          result = doc.data();
+          return result;
+        }
+      });
+    } catch (e) {
+      return result;
+    }
+  return result;
+  }
 }

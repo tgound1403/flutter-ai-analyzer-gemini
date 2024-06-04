@@ -17,12 +17,6 @@ class GeminiAI {
     model = GenerativeModel(
       model: 'gemini-1.5-flash',
       apiKey: apiKey,
-      safetySettings: [
-        SafetySetting(HarmCategory.harassment, HarmBlockThreshold.medium),
-        SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.medium),
-        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium),
-        SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
-      ],
       systemInstruction: Content.text(
           "You are an expert in narrating a story from the given data. "
           "For example, describe weather information and remind people to bring necessary items to deal with the weather,  "

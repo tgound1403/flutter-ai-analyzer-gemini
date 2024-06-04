@@ -11,14 +11,14 @@ class MessageView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       title: Align(
-        alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+        alignment: message.isUser ?? false ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-                color: message.isUser ?
+                color: message.isUser ?? false ?
                 Colors.blueGrey.shade50 :
                 Colors.blueGrey.shade200,
-                borderRadius: message.isUser ?
+                borderRadius: message.isUser ?? false ?
                 const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     bottomRight: Radius.circular(20),
@@ -31,7 +31,7 @@ class MessageView extends StatelessWidget {
                 )
             ),
             child: MarkdownBody(
-              data: message.message,
+              data: message.message ?? '',
             )
         ),
       ),

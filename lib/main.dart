@@ -4,6 +4,7 @@ import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app.dart';
+import 'core/router/router.dart';
 import 'core/services/firebase/firebase_options.dart';
 import 'core/services/firebase/firestore.dart';
 
@@ -17,4 +18,5 @@ Future<void> initApp() async {
   await Firebase.initializeApp( options: DefaultFirebaseOptions.currentPlatform,);
   await GeminiAI.initService();
   await Firestore.init();
+  Routes.configureRoutes();
 }
