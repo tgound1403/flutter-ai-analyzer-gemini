@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_ai_analyzer_app/core/dependency_injection/service_locator.dart';
 import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -19,4 +20,5 @@ Future<void> initApp() async {
   await GeminiAI.initService();
   await Firestore.init();
   Routes.configureRoutes();
+  setupDependencies();
 }

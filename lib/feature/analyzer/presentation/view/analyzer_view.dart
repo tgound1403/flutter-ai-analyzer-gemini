@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ai_analyzer_app/core/common/style/border_radius_style.dart';
 import 'package:flutter_ai_analyzer_app/core/common/style/padding_style.dart';
 import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
+import 'package:flutter_ai_analyzer_app/feature/analyzer/presentation/bloc/analyzer_bloc.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/data/model/chat_model.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/data/model/message.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:gap/gap.dart';
 import 'package:uuid/uuid.dart';
@@ -25,30 +27,25 @@ class AnalyzerView extends StatefulWidget {
 }
 
 class _AnalyzerViewState extends State<AnalyzerView> {
-  final List<ChatModel> lsChat = [];
+  AnalyzerBloc get _bloc => context.read<AnalyzerBloc>();
+  late List<ChatModel> lsChat = [];
   late File? file;
   final _controller = TextEditingController();
   bool _isLoading = false;
 
   @override
   void initState() {
-    fetchData();
+    _bloc.add(const AnalyzerEvent.started());
     super.initState();
-  }
-
-  Future<void> fetchData() async {
-    lsChat.clear();
-    final chatRes = await Firestore.instance.readAllData('chats');
-    for (var e in chatRes) {
-      lsChat.add(ChatModel.fromJson(e));
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: RefreshIndicator(
-        onRefresh: () => fetchData(),
+        onRefresh: () async {
+          _bloc.add(const AnalyzerEvent.started());
+        },
         child: Scaffold(
           appBar: AppBar(
             title: _controller.text.isNotEmpty ? const Text('AI Analyzer') : null,
@@ -74,6 +71,14 @@ class _AnalyzerViewState extends State<AnalyzerView> {
 
   //* region UI
   Widget _buildDrawerContent() {
+    return BlocBuilder<AnalyzerBloc, AnalyzerState>(
+  builder: (context, state) {
+    lsChat = state.whenOrNull(data: (chat) => chat ?? []) ?? [];
+    _isLoading = state.maybeWhen(
+      orElse: () => false,
+      loading: () => true,
+      initial: () => true,
+    );
     return ListView(
       shrinkWrap: true,
       children: [
@@ -104,24 +109,22 @@ class _AnalyzerViewState extends State<AnalyzerView> {
         )
       ],
     );
+  },
+);
   }
 
   Widget _buildBody() {
-    return RefreshIndicator(
-      triggerMode: RefreshIndicatorTriggerMode.anywhere,
-      onRefresh: () => fetchData(),
-      child: Padding(
-        padding: AppPadding.styleLarge,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildWelcome(),
-            _buildFileDisplay(),
-            _buildTextField(),
-            const Gap(16),
-            _buildButton(),
-          ],
-        ),
+    return Padding(
+      padding: AppPadding.styleLarge,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildWelcome(),
+          _buildFileDisplay(),
+          _buildTextField(),
+          const Gap(16),
+          _buildButton(),
+        ],
       ),
     );
   }
@@ -234,39 +237,11 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   }
 
   Future<void> goToChat() async {
-    // await Routes.router.navigateTo(context, RoutePath.chatView);
-    setState(() {
-      _isLoading = true;
-    });
-    final response = await GeminiAI.instance.generateFromSingleFile(file!);
-    if (response?.isNotEmpty ?? false) {
-      final title = await GeminiAI.instance.generateFromText(
-          'Give me a short title with at most 10 words from this paragraph: $response, '
-              'just give me plain text title back, not markdown format');
-      List<int> imageBytes = file!.readAsBytesSync();
-      String base64Image = base64Encode(imageBytes);
-      final mimeType = lookupMimeType(file!.path);
-      final userMessage = MessageModel(message: base64Image, isUser: true, mimeType: mimeType);
-      final systemMessage =
-          MessageModel(message: response ?? '', isUser: false);
-      final data = ChatModel(
-          id: const Uuid().v4(),
-          title: title ?? '',
-          messages: [userMessage, systemMessage]);
-      await Firestore.instance.addData(data.toJson(), 'chats');
-      setState(() {
-        _isLoading = false;
-      });
-      Routes.router.navigateTo(context, RoutePath.chatView,
-          routeSettings: RouteSettings(arguments: data));
-    }
+    _bloc.add(AnalyzerEvent.createNew(context, file!));
   }
 
   Future<void> openChat(String id) async {
-    final res = await Firestore.instance.readSpecificData('chats', id);
-    final model = ChatModel.fromJson(res);
-    await Routes.router.navigateTo(context, RoutePath.chatView,
-        routeSettings: RouteSettings(arguments: model));
+    _bloc.openChat(context, id);
   }
 //*  endregion
 }
