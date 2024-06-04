@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_analyzer_app/feature/chat/presentation/view/message.dart';
+import 'package:flutter_ai_analyzer_app/feature/chat/data/model/message.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 class MessageView extends StatelessWidget {
   const MessageView({required this.message, super.key});
 
-  final Message message;
+  final MessageModel message;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class MessageView extends StatelessWidget {
                 )
             ),
             child: MarkdownBody(
-              data: message.text,
+              data: message.message,
             )
         ),
       ),

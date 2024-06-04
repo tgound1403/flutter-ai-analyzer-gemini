@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_analyzer_app/feature/chat/presentation/view/chat_view.dart';
+import 'package:flutter_ai_analyzer_app/feature/analyzer/presentation/view/analyzer_view.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -8,7 +8,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: ChatView(),
+      home: AnalyzerView(),
     );
   }
 }

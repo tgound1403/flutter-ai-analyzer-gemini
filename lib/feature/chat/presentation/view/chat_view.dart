@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_ai_analyzer_app/core/common/style/padding_style.dart';
+import 'package:flutter_ai_analyzer_app/core/services/firebase/firestore.dart';
 import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/presentation/components/message_view.dart';
+import 'package:gap/gap.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../core/utils/logger.dart';
-import 'message.dart';
+import '../../data/model/message.dart';
 
 class ChatView extends StatefulWidget {
   const ChatView({super.key});
@@ -14,9 +18,14 @@ class ChatView extends StatefulWidget {
 
 class _ChatViewState extends State<ChatView> {
   String? response;
-  final List<Message> _messages = [];
+  final List<MessageModel> _messages = [];
   bool _isLoading = false;
   final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +36,7 @@ class _ChatViewState extends State<ChatView> {
         title: Row(
           children: [
             const Icon(Icons.android),
-            const SizedBox(width: 12,),
+            const Gap(12,),
             Text('AI Analyzer', style: Theme.of(context).textTheme.titleLarge,)
           ],
         ),
@@ -45,14 +54,18 @@ class _ChatViewState extends State<ChatView> {
   Future<void> askAI(String question) async {
     try{
       if(_controller.text.isNotEmpty){
-        _messages.add(Message(text: _controller.text, isUser: true));
+        final message = MessageModel(id: const Uuid().v4(), message: _controller.text, isUser: true);
+        _messages.add(message);
+        Firestore.instance.addData(message.toJson(), "chats");
         _isLoading = true;
       }
 
       response = await GeminiAI.instance.generateFromText(question) ?? "";
 
       setState(() {
-        _messages.add(Message(text: response ?? "", isUser: false));
+        final aiRes = MessageModel(id: const Uuid().v4(), message: response ?? "", isUser: false);
+        _messages.add(aiRes);
+        Firestore.instance.addData(aiRes.toJson(), "chats");
         _isLoading = false;
       });
 
@@ -61,7 +74,6 @@ class _ChatViewState extends State<ChatView> {
     catch(e){
       Logger.e("Error : $e");
     }
-    setState(() {});
   }
   //* endregion
 
@@ -90,7 +102,7 @@ class _ChatViewState extends State<ChatView> {
                   color: Colors.grey.withOpacity(0.5),
                   spreadRadius: 5,
                   blurRadius: 7,
-                  offset: Offset(0, 3)
+                  offset: const Offset(0, 3)
               )
             ]
         ),
@@ -106,15 +118,15 @@ class _ChatViewState extends State<ChatView> {
                         color: Colors.grey
                     ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20)
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20)
                 ),
               ),
             ),
-            SizedBox(width: 8,),
+            const Gap(8),
             _isLoading ?
             Padding(
-              padding: EdgeInsets.all(8),
-              child: SizedBox(
+              padding: AppPadding.styleMedium,
+              child: const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(),
@@ -123,7 +135,7 @@ class _ChatViewState extends State<ChatView> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: GestureDetector(
-                child: Icon(Icons.send),
+                child: const Icon(Icons.send),
                 onTap: () => askAI(_controller.text),
               ),
             )

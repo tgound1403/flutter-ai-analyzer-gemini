@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+import 'package:mime/mime.dart';
 
 import '../../utils/logger.dart';
 
@@ -13,7 +14,22 @@ class GeminiAI {
 
   static Future<void> initService() async {
     final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-    model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
+    model = GenerativeModel(
+      model: 'gemini-1.5-flash',
+      apiKey: apiKey,
+      safetySettings: [
+        SafetySetting(HarmCategory.harassment, HarmBlockThreshold.medium),
+        SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.medium),
+        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium),
+        SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.medium),
+      ],
+      systemInstruction: Content.text(
+          "You are an expert in narrating a story from the given data. "
+          "For example, describe weather information and remind people to bring necessary items to deal with the weather,  "
+          "interpret ECG data to support healthcare professionals in making decisions, etc. "
+          "When you reply to me, you will break the answer into 3 sections including: "
+          "What is the given data about?, What subject does it come from? and What are advices you can give from that data?"),
+    );
   }
 
   Future<String?> generateFromText(String prompt) async {
@@ -23,10 +39,32 @@ class GeminiAI {
     return response?.text;
   }
 
-  Future<String?> generateFromTextAndFile(List<File> files, String inputPrompt) async {
+  Future<String?> generateFromSingleFile(File file, String? inputPrompt) async {
+    try {
+      final image = await file.readAsBytes();
+      // Gemini support img, csv
+      // not support pdf
+      final mimeType = lookupMimeType(file.path);
+      talker.info(mimeType.toString());
+      final filePart = DataPart(mimeType!, image);
+      final prompt = TextPart(inputPrompt ?? '');
+      final response = await model?.generateContent([
+        Content.multi([prompt, filePart])
+      ]);
+      talker.info(response?.text);
+      return response?.text;
+    } on Exception catch (e, st) {
+      talker.error(e);
+      talker.error(st);
+      return null;
+    }
+  }
+
+  Future<String?> generateFromTextAndFiles(
+      List<File> files, String inputPrompt) async {
     final (firstImage, secondImage) = await (
-        File('image0.jpg').readAsBytes(),
-        File('image1.jpg').readAsBytes()
+      File('image0.jpg').readAsBytes(),
+      File('image1.jpg').readAsBytes()
     ).wait;
     final imageParts = [
       DataPart('image/jpeg', firstImage),
