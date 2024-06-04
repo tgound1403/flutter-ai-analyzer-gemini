@@ -21,8 +21,8 @@ class GeminiAI {
           "You are an expert in narrating a story from the given data. "
           "For example, describe weather information and remind people to bring necessary items to deal with the weather,  "
           "interpret ECG data to support healthcare professionals in making decisions, etc. "
-          "When you reply to me, you will break the answer into 3 sections including: "
-          "What is the given data about?, What subject does it come from? and What are advices you can give from that data?"),
+          "When you reply to me, you will break the answer into 2 sections, break into new paragraph after each section, including: "
+          "What is the given data about? and What are advices you can give from that data?"),
     );
   }
 
@@ -54,33 +54,11 @@ class GeminiAI {
     }
   }
 
-  Future<String?> generateFromTextAndFiles(
-      List<File> files, String inputPrompt) async {
-    final (firstImage, secondImage) = await (
-      File('image0.jpg').readAsBytes(),
-      File('image1.jpg').readAsBytes()
-    ).wait;
-    final imageParts = [
-      DataPart('image/jpeg', firstImage),
-      DataPart('image/jpeg', secondImage),
-    ];
-    final prompt = TextPart(inputPrompt);
-    final response = await model?.generateContent([
-      Content.multi([prompt, ...imageParts])
-    ]);
-    talker.info(response?.text);
-    return response?.text;
-  }
-
-  Future<void> chat() async {
+  Future<String?> chat({required List<Content>? history, required Content prompt}) async {
     // Initialize the chat
-    final chat = model?.startChat(history: [
-      Content.text('Hello, I have 2 dogs in my house.'),
-      Content.model([TextPart('Great to meet you. What would you like to know?')])
-    ]);
-    var content = Content.text('How many paws are in my house?');
-    var response = await chat?.sendMessage(content);
-    talker.info(response?.text);
-    Logger.i(response?.text);
+    final chat = model?.startChat(history: history);
+    var response = (await chat?.sendMessage(prompt))?.text;
+    talker.info(response);
+    return response;
   }
 }

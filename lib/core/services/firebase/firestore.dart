@@ -42,4 +42,11 @@ class Firestore {
     }
   return result;
   }
+
+  Future<void> modifyData(String collection, String id, Map<String,dynamic> newData) async {
+    // Create a query to find documents with a specific field value
+    await db.collection(collection).where('id', isEqualTo: id).get().then((event) {
+      event.docs.first.reference.update(newData);
+    });
+  }
 }

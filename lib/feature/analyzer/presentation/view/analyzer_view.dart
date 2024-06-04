@@ -16,6 +16,7 @@ import '../../../../core/router/route_path.dart';
 import '../../../../core/router/router.dart';
 import '../../../../core/services/firebase/firestore.dart';
 import '../../../../core/utils/logger.dart';
+import 'package:mime/mime.dart';
 
 class AnalyzerView extends StatefulWidget {
   const AnalyzerView({super.key});
@@ -47,7 +48,7 @@ class _AnalyzerViewState extends State<AnalyzerView> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('AI Analyzer'),
+          title: _controller.text.isNotEmpty ? const Text('AI Analyzer') : null,
           leading: Builder(
             builder: (context) {
               return IconButton(
@@ -83,14 +84,16 @@ class _AnalyzerViewState extends State<AnalyzerView> {
         ListView.separated(
             shrinkWrap: true,
             itemBuilder: (_, idx) => InkWell(
-              onTap: () async => await openChat(lsChat[idx].id ?? ''),
-              child: ListTile(
+                  onTap: () async => await openChat(lsChat[idx].id ?? ''),
+                  child: ListTile(
                     title: MarkdownBody(
                       data: lsChat[idx].title ?? '',
                     ),
                   ),
-            ),
-            separatorBuilder: (_, idx) => const Divider(thickness: 1,),
+                ),
+            separatorBuilder: (_, idx) => const Divider(
+                  thickness: 1,
+                ),
             itemCount: lsChat.length)
       ],
     );
@@ -102,16 +105,52 @@ class _AnalyzerViewState extends State<AnalyzerView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildImage(),
-          const Gap(16),
+          _buildWelcome(),
+          _buildFileDisplay(),
           _buildTextField(),
           const Gap(16),
-          ElevatedButton(
-              onPressed: () async => await goToChat(),
-              child: const Text('Start chat'))
+          _buildButton(),
         ],
       ),
     );
+  }
+
+  Widget _buildWelcome() {
+    if (_controller.text.isNotEmpty) {
+      return const SizedBox.shrink();
+    } else {
+      return const Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.android_rounded,
+                size: 64,
+                color: Colors.greenAccent,
+              ),
+              Gap(8),
+              Text(
+                'AI Analyzer',
+                style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent),
+              ),
+            ],
+          ),
+          Gap(128)
+        ],
+      );
+    }
+  }
+
+  Widget _buildButton() {
+    return _controller.text.isNotEmpty
+        ? ElevatedButton(
+            onPressed: () async => await goToChat(),
+            child: const Text('Start chat'))
+        : const SizedBox.shrink();
   }
 
   Widget _buildTextField() {
@@ -145,19 +184,27 @@ class _AnalyzerViewState extends State<AnalyzerView> {
     );
   }
 
-  Widget _buildImage() {
+  Widget _buildFileDisplay() {
     if (_controller.text.isNotEmpty) {
+      final mimeType = lookupMimeType(file!.path);
+      final fileMime = mimeType?.substring(0, mimeType.indexOf('/'));
       return Container(
           padding: AppPadding.styleMedium,
           height: MediaQuery.sizeOf(context).height * .5,
           decoration: BoxDecoration(
             borderRadius: AppBorderRadius.styleMedium,
           ),
-          child: Image.file(file!));
+          child: fileMime == 'image'
+              ? Image.file(file!)
+              : Text(
+                  'This is ${fileMime ?? ' '}',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ));
     } else {
       return const SizedBox.shrink();
     }
   }
+
   //* endregion
 
   //* region ACTION
@@ -167,7 +214,8 @@ class _AnalyzerViewState extends State<AnalyzerView> {
     if (result != null) {
       file = File(result.files.single.path!);
       final filePath = file!.path.toString();
-      _controller.text = file!.path.substring(filePath.lastIndexOf('/') + 1, filePath.length);
+      _controller.text =
+          file!.path.substring(filePath.lastIndexOf('/') + 1, filePath.length);
       setState(() {});
     } else {
       // User canceled the picker
@@ -179,20 +227,25 @@ class _AnalyzerViewState extends State<AnalyzerView> {
     final response = await GeminiAI.instance.generateFromSingleFile(file!, '');
     if (response?.isNotEmpty ?? false) {
       final title = await GeminiAI.instance.generateFromText(
-          'Give me a short title with at most 10 words from this paragraph: $response, just give me plain text title back, not markdown format'
-      );
-      final userMessage  = MessageModel(message: _controller.text, isUser: true);
-      final systemMessage = MessageModel(message: response ?? '', isUser: false);
-      final data = ChatModel(id: const Uuid().v4(), title: title ?? '', messages: [userMessage, systemMessage] );
+          'Give me a short title with at most 10 words from this paragraph: $response, just give me plain text title back, not markdown format');
+      final userMessage = MessageModel(message: _controller.text, isUser: true);
+      final systemMessage =
+          MessageModel(message: response ?? '', isUser: false);
+      final data = ChatModel(
+          id: const Uuid().v4(),
+          title: title ?? '',
+          messages: [userMessage, systemMessage]);
       Firestore.instance.addData(data.toJson(), 'chats');
-      Routes.router.navigateTo(context, RoutePath.chatView, routeSettings: RouteSettings(arguments: data));
+      Routes.router.navigateTo(context, RoutePath.chatView,
+          routeSettings: RouteSettings(arguments: data));
     }
   }
 
   Future<void> openChat(String id) async {
     final res = await Firestore.instance.readSpecificData('chats', id);
-      final model = ChatModel.fromJson(res);
-      await Routes.router.navigateTo(context, RoutePath.chatView, routeSettings: RouteSettings(arguments: model));
+    final model = ChatModel.fromJson(res);
+    await Routes.router.navigateTo(context, RoutePath.chatView,
+        routeSettings: RouteSettings(arguments: model));
   }
-  //*  endregion
+//*  endregion
 }

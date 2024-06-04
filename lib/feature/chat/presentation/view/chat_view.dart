@@ -4,6 +4,8 @@ import 'package:flutter_ai_analyzer_app/core/services/firebase/firestore.dart';
 import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/presentation/components/message_view.dart';
 import 'package:gap/gap.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../../../core/router/router.dart';
 import '../../../../core/utils/logger.dart';
@@ -64,20 +66,29 @@ class _ChatViewState extends State<ChatView> {
 
   //*region ACTION
   Future<void> askAI(String question) async {
+    List<Content>? history = [];
     try {
       if (_controller.text.isNotEmpty) {
         final message = MessageModel(message: _controller.text, isUser: true);
         _messages.add(message);
-        Firestore.instance.addData(message.toJson(), "chats");
         _isLoading = true;
       }
 
-      response = await GeminiAI.instance.generateFromText(question) ?? "";
+      for (final message in widget.model.messages!) {
+        if (message.isUser ?? false) {
+          history.add(Content('user', [TextPart(message.message!)]));
+        } else {
+          history.add(Content('model', [TextPart(message.message!)]));
+        }
+      }
+
+      response = await GeminiAI.instance.chat(prompt: Content.text(_controller.text), history: history) ?? "";
 
       setState(() {
         final aiRes = MessageModel(message: response ?? "", isUser: false);
         _messages.add(aiRes);
-        Firestore.instance.addData(aiRes.toJson(), "chats");
+        widget.model.messages = _messages;
+        Firestore.instance.modifyData('chats', widget.model.id!, widget.model.toJson());
         _isLoading = false;
       });
 

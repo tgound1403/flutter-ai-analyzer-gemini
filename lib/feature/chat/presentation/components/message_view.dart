@@ -17,7 +17,7 @@ class MessageView extends StatelessWidget {
             decoration: BoxDecoration(
                 color: message.isUser ?? false ?
                 Colors.blueGrey.shade50 :
-                Colors.blueGrey.shade200,
+                Colors.blueGrey.shade100,
                 borderRadius: message.isUser ?? false ?
                 const BorderRadius.only(
                     topLeft: Radius.circular(20),
