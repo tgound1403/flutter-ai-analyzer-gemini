@@ -18,11 +18,13 @@ class GeminiAI {
       model: 'gemini-1.5-pro',
       apiKey: apiKey,
       systemInstruction: Content.text(
+          "When there no prompt provide"
           "You are an expert in narrating a story from the given data. "
           "For example, describe weather information and remind people to bring necessary items to deal with the weather,  "
           "interpret ECG data to support healthcare professionals in making decisions, etc. "
           "When you reply to me, you will break the answer into 2 sections, break into new paragraph after each section, section heading including: "
-          "What is the given data about? and What are advices you can give from that data?"),
+          "What is the given data about? and What are advices you can give from that data?"
+          "else if prompt is provided follow the prompt"),
     );
   }
 
