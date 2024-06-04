@@ -84,6 +84,8 @@ class _ChatViewState extends State<ChatView> {
 
       response = await GeminiAI.instance.chat(prompt: Content.text(_controller.text), history: history) ?? "";
 
+      _controller.clear();
+
       setState(() {
         final aiRes = MessageModel(message: response ?? "", isUser: false);
         _messages.add(aiRes);
@@ -92,7 +94,6 @@ class _ChatViewState extends State<ChatView> {
         _isLoading = false;
       });
 
-      _controller.clear();
     } catch (e) {
       Logger.e("Error : $e");
     }
@@ -144,19 +145,10 @@ class _ChatViewState extends State<ChatView> {
               ),
             ),
             const Gap(8),
-            _isLoading
-                ? Padding(
-                    padding: AppPadding.styleMedium,
-                    child: const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : Padding(
+            Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: GestureDetector(
-                      child: const Icon(Icons.send),
+                      child: !_isLoading ? const Icon(Icons.send) : const CircularProgressIndicator(),
                       onTap: () => askAI(_controller.text),
                     ),
                   )

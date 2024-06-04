@@ -10,9 +10,14 @@ class Firestore {
     db = FirebaseFirestore.instance;
   }
 
-  void addData(Map<String, dynamic> data, String collection) {
-    db.collection(collection).add(data).then((DocumentReference doc) =>
-        talker.info('DocumentSnapshot added with ID: ${doc.id}'));
+  Future<void> addData(Map<String, dynamic> data, String collection) async {
+    try {
+      await db.collection(collection).add(data).then((DocumentReference doc) =>
+          talker.info('DocumentSnapshot added with ID: ${doc.id}'));
+    } catch (e, st) {
+      talker.error(e);
+      talker.error(st);
+    }
   }
 
   Future<List<Map<String, dynamic>>> readAllData(String collection) async {

@@ -30,6 +30,7 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   final List<ChatModel> lsChat = [];
   late File? file;
   final _controller = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   }
 
   Future<void> fetchData() async {
+    lsChat.clear();
     final chatRes = await Firestore.instance.readAllData('chats');
     for (var e in chatRes) {
       lsChat.add(ChatModel.fromJson(e));
@@ -47,24 +49,27 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: _controller.text.isNotEmpty ? const Text('AI Analyzer') : null,
-          leading: Builder(
-            builder: (context) {
-              return IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              );
-            },
+      child: RefreshIndicator(
+        onRefresh: () => fetchData(),
+        child: Scaffold(
+          appBar: AppBar(
+            title: _controller.text.isNotEmpty ? const Text('AI Analyzer') : null,
+            leading: Builder(
+              builder: (context) {
+                return IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                );
+              },
+            ),
           ),
+          drawer: Drawer(
+            child: _buildDrawerContent(),
+          ),
+          body: _buildBody(),
         ),
-        drawer: Drawer(
-          child: _buildDrawerContent(),
-        ),
-        body: _buildBody(),
       ),
     );
   }
@@ -82,36 +87,43 @@ class _AnalyzerViewState extends State<AnalyzerView> {
           ),
         ),
         const Gap(32),
-        ListView.separated(
-            shrinkWrap: true,
-            itemBuilder: (_, idx) => InkWell(
-                  onTap: () async => await openChat(lsChat[idx].id ?? ''),
-                  child: ListTile(
-                    title: MarkdownBody(
-                      data: lsChat[idx].title ?? '',
+        SingleChildScrollView(
+          child: ListView.separated(
+            physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemBuilder: (_, idx) => InkWell(
+                    onTap: () async => await openChat(lsChat[idx].id ?? ''),
+                    child: ListTile(
+                      title: MarkdownBody(
+                        data: lsChat[idx].title ?? '',
+                      ),
                     ),
                   ),
-                ),
-            separatorBuilder: (_, idx) => const Divider(
-                  thickness: 1,
-                ),
-            itemCount: lsChat.length)
+              separatorBuilder: (_, idx) => const Divider(
+                    thickness: 1,
+                  ),
+              itemCount: lsChat.length),
+        )
       ],
     );
   }
 
   Widget _buildBody() {
-    return Padding(
-      padding: AppPadding.styleLarge,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildWelcome(),
-          _buildFileDisplay(),
-          _buildTextField(),
-          const Gap(16),
-          _buildButton(),
-        ],
+    return RefreshIndicator(
+      triggerMode: RefreshIndicatorTriggerMode.anywhere,
+      onRefresh: () => fetchData(),
+      child: Padding(
+        padding: AppPadding.styleLarge,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildWelcome(),
+            _buildFileDisplay(),
+            _buildTextField(),
+            const Gap(16),
+            _buildButton(),
+          ],
+        ),
       ),
     );
   }
@@ -148,9 +160,9 @@ class _AnalyzerViewState extends State<AnalyzerView> {
 
   Widget _buildButton() {
     return _controller.text.isNotEmpty
-        ? ElevatedButton(
+        ? _isLoading ? const CircularProgressIndicator() : ElevatedButton(
             onPressed: () async => await goToChat(),
-            child: const Text('Start chat'))
+            child: const Text('Start analyzing'))
         : const SizedBox.shrink();
   }
 
@@ -225,7 +237,10 @@ class _AnalyzerViewState extends State<AnalyzerView> {
 
   Future<void> goToChat() async {
     // await Routes.router.navigateTo(context, RoutePath.chatView);
-    final response = await GeminiAI.instance.generateFromSingleFile(file!, '');
+    setState(() {
+      _isLoading = true;
+    });
+    final response = await GeminiAI.instance.generateFromSingleFile(file!);
     if (response?.isNotEmpty ?? false) {
       final title = await GeminiAI.instance.generateFromText(
           'Give me a short title with at most 10 words from this paragraph: $response, '
@@ -240,7 +255,10 @@ class _AnalyzerViewState extends State<AnalyzerView> {
           id: const Uuid().v4(),
           title: title ?? '',
           messages: [userMessage, systemMessage]);
-      Firestore.instance.addData(data.toJson(), 'chats');
+      await Firestore.instance.addData(data.toJson(), 'chats');
+      setState(() {
+        _isLoading = false;
+      });
       Routes.router.navigateTo(context, RoutePath.chatView,
           routeSettings: RouteSettings(arguments: data));
     }
