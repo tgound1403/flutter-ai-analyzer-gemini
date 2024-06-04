@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -227,8 +228,12 @@ class _AnalyzerViewState extends State<AnalyzerView> {
     final response = await GeminiAI.instance.generateFromSingleFile(file!, '');
     if (response?.isNotEmpty ?? false) {
       final title = await GeminiAI.instance.generateFromText(
-          'Give me a short title with at most 10 words from this paragraph: $response, just give me plain text title back, not markdown format');
-      final userMessage = MessageModel(message: _controller.text, isUser: true);
+          'Give me a short title with at most 10 words from this paragraph: $response, '
+              'just give me plain text title back, not markdown format');
+      List<int> imageBytes = file!.readAsBytesSync();
+      String base64Image = base64Encode(imageBytes);
+      final mimeType = lookupMimeType(file!.path);
+      final userMessage = MessageModel(message: base64Image, isUser: true, mimeType: mimeType);
       final systemMessage =
           MessageModel(message: response ?? '', isUser: false);
       final data = ChatModel(

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/data/model/message.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -30,11 +32,19 @@ class MessageView extends StatelessWidget {
                     bottomRight: Radius.circular(20)
                 )
             ),
-            child: MarkdownBody(
-              data: message.message ?? '',
-            )
+            child: _buildContent(context)
         ),
       ),
     );
+  }
+
+  Widget _buildContent(BuildContext  context) {
+    if (message.mimeType != null) {
+      return SizedBox(width: MediaQuery.sizeOf(context).width * .5, child: Image.memory(base64Decode(message.message!)));
+    } else {
+      return MarkdownBody(
+        data: message.message ?? '',
+      );
+    }
   }
 }
