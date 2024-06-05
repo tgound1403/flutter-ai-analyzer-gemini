@@ -21,14 +21,10 @@ class ChatView extends StatefulWidget {
 class _ChatViewState extends State<ChatView> {
   ChatBloc get _bloc => context.read<ChatBloc>();
 
-  // String? chatResponseFromAI;
-  // final List<MessageModel> _messageInChat = [];
-  // bool _isLoading = false;
   final _controller = TextEditingController();
 
   @override
   void initState() {
-    // _messageInChat.addAll(widget.model.messages!.toList());
     super.initState();
   }
 
