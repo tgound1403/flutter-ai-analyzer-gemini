@@ -40,7 +40,8 @@ class _AnalyzerViewState extends State<AnalyzerView> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: _controller.text.isNotEmpty ? const Text('AI Analyzer') : null,
+            title:
+                _controller.text.isNotEmpty ? const Text('AI Analyzer') : null,
             leading: Builder(
               builder: (context) {
                 return IconButton(
@@ -64,45 +65,45 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   //* region UI
   Widget _buildDrawerContent() {
     return BlocBuilder<AnalyzerBloc, AnalyzerState>(
-  builder: (context, state) {
-    lsChat = state.whenOrNull(data: (chat) => chat ?? []) ?? [];
-    _isLoading = state.maybeWhen(
-      orElse: () => false,
-      loading: () => true,
-      initial: () => true,
-    );
-    return ListView(
-      shrinkWrap: true,
-      children: [
-        Padding(
-          padding: AppPadding.styleLarge,
-          child: Text(
-            'Old stories',
-            style: Theme.of(context).textTheme.headlineLarge,
-          ),
-        ),
-        const Gap(32),
-        SingleChildScrollView(
-          child: ListView.separated(
-            physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemBuilder: (_, idx) => InkWell(
-                    onTap: () async => await openChat(lsChat[idx].id ?? ''),
-                    child: ListTile(
-                      title: MarkdownBody(
-                        data: lsChat[idx].title ?? '',
+      builder: (context, state) {
+        lsChat = state.whenOrNull(data: (chat) => chat ?? []) ?? [];
+        _isLoading = state.maybeWhen(
+          orElse: () => false,
+          loading: () => true,
+          initial: () => true,
+        );
+        return ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: AppPadding.styleLarge,
+              child: Text(
+                'Old stories',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+            ),
+            const Gap(32),
+            SingleChildScrollView(
+              child: ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemBuilder: (_, idx) => InkWell(
+                        onTap: () async => await openChat(lsChat[idx].id ?? ''),
+                        child: ListTile(
+                          title: MarkdownBody(
+                            data: lsChat[idx].title ?? '',
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              separatorBuilder: (_, idx) => const Divider(
-                    thickness: 1,
-                  ),
-              itemCount: lsChat.length),
-        )
-      ],
+                  separatorBuilder: (_, idx) => const Divider(
+                        thickness: 1,
+                      ),
+                  itemCount: lsChat.length),
+            )
+          ],
+        );
+      },
     );
-  },
-);
   }
 
   Widget _buildBody() {
@@ -115,7 +116,16 @@ class _AnalyzerViewState extends State<AnalyzerView> {
           _buildFileDisplay(),
           _buildTextField(),
           const Gap(16),
-          _buildButton(),
+          BlocBuilder<AnalyzerBloc, AnalyzerState>(
+            builder: (context, state) {
+              _isLoading = state.maybeWhen(
+                orElse: () => false,
+                loading: () => true,
+                initial: () => true,
+              );
+              return _buildButton(_isLoading);
+            },
+          ),
         ],
       ),
     );
@@ -151,11 +161,13 @@ class _AnalyzerViewState extends State<AnalyzerView> {
     }
   }
 
-  Widget _buildButton() {
+  Widget _buildButton(bool isLoading) {
     return _controller.text.isNotEmpty
-        ? _isLoading ? const CircularProgressIndicator() : ElevatedButton(
-            onPressed: () async => await goToChat(),
-            child: const Text('Start analyzing'))
+        ? isLoading
+            ? const CircularProgressIndicator()
+            : ElevatedButton(
+                onPressed: () async => await goToChat(),
+                child: const Text('Start analyzing'))
         : const SizedBox.shrink();
   }
 
@@ -233,7 +245,9 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   }
 
   Future<void> openChat(String id) async {
-    await _bloc.openChat(context, id).then((v)=>_bloc.add(const AnalyzerEvent.started()));
+    await _bloc
+        .openChat(context, id)
+        .then((v) => _bloc.add(const AnalyzerEvent.started()));
   }
 //*  endregion
 }
