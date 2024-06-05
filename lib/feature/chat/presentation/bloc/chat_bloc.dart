@@ -7,7 +7,6 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../../../../core/common/models/error_state.dart';
 import '../../../../core/utils/enum/load_state.dart';
-import '../../../../core/utils/logger.dart';
 import '../../data/model/chat_model.dart';
 import '../../data/model/message.dart';
 

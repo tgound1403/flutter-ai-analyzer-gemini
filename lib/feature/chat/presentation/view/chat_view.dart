@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_analyzer_app/core/services/firebase/firestore.dart';
-import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
 import 'package:flutter_ai_analyzer_app/core/utils/enum/load_state.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/presentation/components/message_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../../../../core/router/router.dart';
-import '../../../../core/utils/logger.dart';
 import '../../data/model/chat_model.dart';
-import '../../data/model/message.dart';
+
 import '../bloc/chat_bloc.dart';
 
 class ChatView extends StatefulWidget {
-  ChatView({required this.model, super.key});
+  const ChatView({required this.model, super.key});
 
-  ChatModel model;
+  final ChatModel model;
 
   @override
   State<ChatView> createState() => _ChatViewState();

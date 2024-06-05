@@ -4,7 +4,6 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../../../core/common/models/error_state.dart';
 import '../../../../core/services/firebase/firestore.dart';
 import '../../../../core/services/gemini_ai/gemini.dart';
-import '../../../../core/utils/logger.dart';
 import '../model/chat_model.dart';
 import '../model/message.dart';
 

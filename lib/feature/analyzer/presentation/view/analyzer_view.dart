@@ -83,7 +83,7 @@ class _AnalyzerViewState extends State<AnalyzerView> {
               ),
             ),
             const Gap(32),
-            SingleChildScrollView(
+            _isLoading ? const Center(child: CircularProgressIndicator()) : SingleChildScrollView(
               child: ListView.separated(
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
