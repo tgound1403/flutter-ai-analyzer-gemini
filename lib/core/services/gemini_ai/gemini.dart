@@ -5,7 +5,6 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:mime/mime.dart';
 
-import '../../utils/logger.dart';
 
 class GeminiAI {
   static final instance = GeminiAI();
@@ -32,6 +31,7 @@ class GeminiAI {
     } catch (e, st) {
       talker.error(e);
       talker.error(st);
+      return null;
     }
   }
 
@@ -68,6 +68,7 @@ class GeminiAI {
     } catch (e, st) {
       talker.error(e);
       talker.error(st);
+      return null;
     }
   }
 }

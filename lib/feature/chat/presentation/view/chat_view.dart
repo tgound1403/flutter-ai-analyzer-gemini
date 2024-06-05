@@ -1,18 +1,17 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_ai_analyzer_app/core/common/style/padding_style.dart';
 import 'package:flutter_ai_analyzer_app/core/services/firebase/firestore.dart';
 import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
+import 'package:flutter_ai_analyzer_app/core/utils/enum/load_state.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/presentation/components/message_view.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../../../core/router/router.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/model/chat_model.dart';
 import '../../data/model/message.dart';
+import '../bloc/chat_bloc.dart';
 
 class ChatView extends StatefulWidget {
   ChatView({required this.model, super.key});
@@ -24,14 +23,16 @@ class ChatView extends StatefulWidget {
 }
 
 class _ChatViewState extends State<ChatView> {
-  String? response;
-  final List<MessageModel> _messages = [];
-  bool _isLoading = false;
+  ChatBloc get _bloc => context.read<ChatBloc>();
+
+  // String? chatResponseFromAI;
+  // final List<MessageModel> _messageInChat = [];
+  // bool _isLoading = false;
   final _controller = TextEditingController();
 
   @override
   void initState() {
-    _messages.addAll(widget.model.messages!.toList());
+    // _messageInChat.addAll(widget.model.messages!.toList());
     super.initState();
   }
 
@@ -51,7 +52,7 @@ class _ChatViewState extends State<ChatView> {
             const Icon(Icons.android),
             const Gap(12),
             SizedBox(
-              width: MediaQuery.sizeOf(context).width *.6,
+              width: MediaQuery.sizeOf(context).width * .6,
               child: Text(
                 widget.model.title?.replaceAll('#', '') ?? '',
                 overflow: TextOverflow.ellipsis,
@@ -67,45 +68,9 @@ class _ChatViewState extends State<ChatView> {
   }
 
   //*region ACTION
-  Future<void> askAI(String question) async {
-    List<Content>? history = [];
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-      if (_controller.text.isNotEmpty) {
-        final message = MessageModel(message: _controller.text, isUser: true);
-        _messages.add(message);
-      }
-
-      for (final message in widget.model.messages!) {
-        if (message.isUser ?? false) {
-          if (message.mimeType == null) {
-            history.add(Content('user', [TextPart(message.message!)]));
-          } else {
-            final decoded = base64Decode(message.message!);
-            history.add(Content('user', [DataPart(message.mimeType!, decoded)]));
-          }
-        } else {
-          history.add(Content('model', [TextPart(message.message!)]));
-        }
-      }
-
-      response = await GeminiAI.instance.chat(prompt: Content.text(_controller.text), history: history) ?? "";
-
-      _controller.clear();
-
-      setState(() {
-        final aiRes = MessageModel(message: response ?? "", isUser: false);
-        _messages.add(aiRes);
-        widget.model.messages = _messages;
-        Firestore.instance.modifyData('chats', widget.model.id!, widget.model.toJson());
-        _isLoading = false;
-      });
-
-    } catch (e) {
-      Logger.e("Error : $e");
-    }
+  void chatWithAI() {
+    _bloc.add(ChatEventStart(prompt: _controller.text, model: widget.model));
+    _controller.clear();
   }
 
   //* endregion
@@ -113,12 +78,17 @@ class _ChatViewState extends State<ChatView> {
   //* region UI
   Widget _buildMessagesSection() {
     return Expanded(
-      child: ListView.builder(
-          itemCount: _messages.length,
-          itemBuilder: (context, index) {
-            final message = _messages[index];
-            return MessageView(message: message);
-          }),
+      child: BlocBuilder<ChatBloc, ChatState>(
+        builder: (context, state) {
+          final messages = state.model?.messages ?? [];
+          return ListView.builder(
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final message = messages[index];
+                return MessageView(message: message);
+              });
+        },
+      ),
     );
   }
 
@@ -155,12 +125,18 @@ class _ChatViewState extends State<ChatView> {
             ),
             const Gap(8),
             Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: GestureDetector(
-                      child: !_isLoading ? const Icon(Icons.send) : const CircularProgressIndicator(),
-                      onTap: () => askAI(_controller.text),
-                    ),
-                  )
+              padding: const EdgeInsets.all(16.0),
+              child: BlocBuilder<ChatBloc, ChatState>(
+                builder: (context, state) {
+                  return GestureDetector(
+                    child: state.state.isLoading
+                        ? const CircularProgressIndicator()
+                        : const Icon(Icons.send),
+                    onTap: () => chatWithAI(),
+                  );
+                },
+              ),
+            )
           ],
         ),
       ),

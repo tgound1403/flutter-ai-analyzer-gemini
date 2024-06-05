@@ -36,9 +36,9 @@ class AnalyzerRemoteDataSource {
         final title = await GeminiAI.instance.generateFromText(
             'Give me a short title with at most 10 words from this paragraph: $response, '
             'just give me plain text title back, not markdown format');
-        List<int> imageBytes = file!.readAsBytesSync();
+        List<int> imageBytes = file.readAsBytesSync();
         String base64Image = base64Encode(imageBytes);
-        final mimeType = lookupMimeType(file!.path);
+        final mimeType = lookupMimeType(file.path);
         final userMessage = MessageModel(message: base64Image, isUser: true, mimeType: mimeType);
         final systemMessage = MessageModel(message: response ?? '', isUser: false);
         final data = ChatModel(

@@ -1,22 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ai_analyzer_app/core/common/style/border_radius_style.dart';
 import 'package:flutter_ai_analyzer_app/core/common/style/padding_style.dart';
-import 'package:flutter_ai_analyzer_app/core/services/gemini_ai/gemini.dart';
 import 'package:flutter_ai_analyzer_app/feature/analyzer/presentation/bloc/analyzer_bloc.dart';
 import 'package:flutter_ai_analyzer_app/feature/chat/data/model/chat_model.dart';
-import 'package:flutter_ai_analyzer_app/feature/chat/data/model/message.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:gap/gap.dart';
-import 'package:uuid/uuid.dart';
-
-import '../../../../core/router/route_path.dart';
-import '../../../../core/router/router.dart';
-import '../../../../core/services/firebase/firestore.dart';
 import 'package:mime/mime.dart';
 
 class AnalyzerView extends StatefulWidget {
@@ -92,7 +84,7 @@ class _AnalyzerViewState extends State<AnalyzerView> {
         const Gap(32),
         SingleChildScrollView(
           child: ListView.separated(
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemBuilder: (_, idx) => InkWell(
                     onTap: () async => await openChat(lsChat[idx].id ?? ''),
@@ -241,7 +233,7 @@ class _AnalyzerViewState extends State<AnalyzerView> {
   }
 
   Future<void> openChat(String id) async {
-    _bloc.openChat(context, id);
+    await _bloc.openChat(context, id).then((v)=>_bloc.add(const AnalyzerEvent.started()));
   }
 //*  endregion
 }

@@ -64,7 +64,7 @@ class AnalyzerBloc extends Bloc<AnalyzerEvent, AnalyzerState> {
     );
   }
 
-  void openChat(BuildContext context, String id) async {
+  Future<void> openChat(BuildContext context, String id) async {
     final res = await _useCase.openOldChat(id: id);
     res.fold(Left.new, (r) {
       Routes.router.navigateTo(
