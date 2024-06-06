@@ -15,4 +15,6 @@ class AnalyzerUseCase {
   Future<Either<ErrorState, ChatModel>> startChatSection({required File? file}) => _repo.startChatSection(file: file);
 
   Future<Either<ErrorState, ChatModel>> openOldChat({required String id}) => _repo.openOldChat(id: id);
+
+  Future<Either<ErrorState, bool>> deleteSpecificChat({required String id}) => _repo.deleteSpecificChat(id: id);
 }

@@ -67,4 +67,13 @@ class AnalyzerRemoteDataSource {
       return Left(ErrorState(error: e, stackTrace: st));
     }
   }
+
+  Future<Either<ErrorState, bool>> deleteChat(String id) async {
+    try {
+      final res = await Firestore.instance.deleteSpecificData('chats', id);
+      return Right(res);
+    } catch (e, st) {
+      return Left(ErrorState(error: e, stackTrace: st));
+    }
+  }
 }

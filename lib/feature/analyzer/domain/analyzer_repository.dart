@@ -23,4 +23,9 @@ class AnalyzerRepository {
     final result = await _remoteDS.openOldChat(id);
     return result.fold(Left.new, Right.new);
   }
+
+  Future<Either<ErrorState, bool>> deleteSpecificChat({required String id}) async {
+    final result = await _remoteDS.deleteChat(id);
+    return result.fold(Left.new, Right.new);
+  }
 }

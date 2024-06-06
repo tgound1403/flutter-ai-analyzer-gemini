@@ -89,12 +89,18 @@ class _AnalyzerViewState extends State<AnalyzerView> {
                   shrinkWrap: true,
                   itemBuilder: (_, idx) => InkWell(
                         onTap: () async => await openChat(lsChat[idx].id ?? ''),
-                        child: ListTile(
-                          title: MarkdownBody(
-                            data: lsChat[idx].title ?? '',
-                          ),
-                        ),
-                      ),
+                    child: ListTile(
+                                title: MarkdownBody(
+                                  data: lsChat[idx].title ?? '',
+                                ),
+                                trailing: IconButton(
+                                  onPressed: () => _bloc.add(
+                                      AnalyzerEvent.delete(
+                                          lsChat[idx].id ?? '')),
+                                  icon: const Icon(Icons.delete_rounded, color: Colors.black26,),
+                                ),
+                              ),
+                            ),
                   separatorBuilder: (_, idx) => const Divider(
                         thickness: 1,
                       ),

@@ -4,6 +4,7 @@ part of 'analyzer_bloc.dart';
 class AnalyzerEvent with _$AnalyzerEvent {
   const factory AnalyzerEvent.started() = _Started;
   const factory AnalyzerEvent.createNew(BuildContext context, File file) = _ECreate;
+  const factory AnalyzerEvent.delete(String id) = _EDelete;
   const factory AnalyzerEvent.loading() = _ELoading;
   const factory AnalyzerEvent.error(ErrorState error) = _EError;
   const factory AnalyzerEvent.data(

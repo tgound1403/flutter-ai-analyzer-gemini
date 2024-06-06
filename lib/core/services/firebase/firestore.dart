@@ -54,4 +54,24 @@ class Firestore {
       event.docs.first.reference.update(newData);
     });
   }
+
+  Future<bool> deleteSpecificData(
+      String collection, String id) async {
+    try {
+      await db
+          .collection(collection)
+          .where('id', isEqualTo: id)
+          .get()
+          .then((event) {
+        for (var doc in event.docs) {
+          doc.reference.delete();
+        }
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+
 }
