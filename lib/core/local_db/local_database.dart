@@ -43,22 +43,16 @@ mixin LocalDatabase {
 
   static Future<Box> openHive() async {
     final appDir = await getApplicationDocumentsDirectory();
-    Hive.init('${appDir.path}/fmcHive')
+    Hive.init('${appDir.path}/ai_analyzer_hive')
     // ..registerAdapter(PersonAdapter())
         ;
 
-    // return Hive.openBox<Map<String, dynamic>>('fmc');
-    return Hive.openBox('fmc');
+    // return Hive.openBox<Map<String, dynamic>>('ai_analyzer');
+    return Hive.openBox('ai_analyzer');
   }
 
   static Future clearDatabase() async {
     await isar?.writeTxn<void>(() async {
-      //Don't remove account data, keep for login with pin screen
-      //await isar?.accountModels.where().deleteAll()
-      // await isar?.deviceModels.where().deleteAll();
-      // await isar?.profileModels.where().deleteAll();
-      // await isar?.reminderModels.where().deleteAll();
-      // await isar?.arrangeProfileCGMModels.where().deleteAll();
     });
 
     await hive?.clear();
@@ -82,7 +76,6 @@ mixin LocalDatabase {
       return null;
     }
 
-    // String jsonString = box.get('myKey', defaultValue: '[]');
     final Iterable jsonList = jsonDecode(result);
     return jsonList;
   }
